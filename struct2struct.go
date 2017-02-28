@@ -31,13 +31,19 @@ func mapFields(i interface{}, otherType reflect.Type) map[string]reflect.Value {
 		fType := iType.Field(i)
 		fValue := iValue.Field(i)
 		tags := fType.Tag
-		if name, ok := tags.Lookup(fmt.Sprintf("%v.%v", otherType.PkgPath(), otherType.Name())); ok {
-			outFields[name] = fValue
-			continue
-		}
-		if name, ok := tags.Lookup(otherType.String()); ok {
-			outFields[name] = fValue
-			continue
+		if otherType != nil {
+			if name, ok := tags.Lookup(fmt.Sprintf("%v.%v", otherType.PkgPath(), otherType.Name())); ok {
+				outFields[name] = fValue
+				continue
+			}
+			if name, ok := tags.Lookup(otherType.String()); ok {
+				outFields[name] = fValue
+				continue
+			}
+			if name, ok := tags.Lookup(otherType.Name()); ok {
+				outFields[name] = fValue
+				continue
+			}
 		}
 		outFields[iType.Field(i).Name] = fValue
 	}
