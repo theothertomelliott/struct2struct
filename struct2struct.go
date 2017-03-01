@@ -46,6 +46,12 @@ func applyField(iField reflect.Value, vField reflect.Value) error {
 		return nil
 	}
 	if iField.Type() != vField.Type() {
+		if iField.Type().Kind() == reflect.Ptr {
+			return applyField(reflect.Indirect(iField), vField)
+		}
+		if vField.Type().Kind() == reflect.Ptr {
+			return errors.New("setting non-pointer to pointer not yet supported")
+		}
 		return errors.New("types do not match")
 	}
 

@@ -109,6 +109,55 @@ func TestMarshal(t *testing.T) {
 				MatchString: 100,
 			},
 		},
+		{
+			name: "String pointer to string pointer",
+			in: struct {
+				MatchString *string
+			}{
+				MatchString: stringPtr("match"),
+			},
+			other: &struct {
+				MatchString *string
+			}{},
+			expected: &struct {
+				MatchString *string
+			}{
+				MatchString: stringPtr("match"),
+			},
+		},
+		{
+			name: "String pointer to string",
+			in: struct {
+				MatchString *string
+			}{
+				MatchString: stringPtr("match"),
+			},
+			other: &struct {
+				MatchString string
+			}{},
+			expected: &struct {
+				MatchString string
+			}{
+				MatchString: "match",
+			},
+		},
+		{
+			name: "String to string pointer",
+			in: struct {
+				MatchString string
+			}{
+				MatchString: "match",
+			},
+			other: &struct {
+				MatchString *string
+			}{},
+			expected: &struct {
+				MatchString *string
+			}{
+				MatchString: stringPtr("match"),
+			},
+			err: errors.New("MatchString: setting non-pointer to pointer not yet supported"),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -200,4 +249,8 @@ func TestMapFields(t *testing.T) {
 			}
 		})
 	}
+}
+
+func stringPtr(in string) *string {
+	return &in
 }
