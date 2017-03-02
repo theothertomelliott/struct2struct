@@ -74,6 +74,15 @@ func applyPointers(iField reflect.Value, vField reflect.Value) (bool, error) {
 			err := applyField(newPtr, vField)
 			return err == nil, err
 		}
+		t := reflect.TypeOf(vField.Interface())
+		if iField.Kind() == reflect.Struct && t.Elem().Kind() == reflect.Struct {
+			newPtr := reflect.New(t.Elem())
+			err := doMarshal(iField.Interface(), newPtr.Interface(), false)
+			if err == nil {
+				vField.Set(newPtr)
+			}
+			return err == nil, err
+		}
 	}
 	return false, nil
 }
@@ -84,7 +93,7 @@ func applyStruct(iField reflect.Value, vField reflect.Value) (bool, error) {
 	}
 	newPtr := reflect.New(vField.Type())
 	newPtr.Elem().Set(vField)
-	err := Marshal(iField.Interface(), newPtr.Interface())
+	err := doMarshal(iField.Interface(), newPtr.Interface(), false)
 	vField.Set(newPtr.Elem())
 	return err == nil, err
 }
