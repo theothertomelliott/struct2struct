@@ -156,7 +156,6 @@ func TestMarshal(t *testing.T) {
 			}{
 				MatchString: stringPtr("match"),
 			},
-			err: errors.New("MatchString: setting non-pointer to pointer not yet supported"),
 		},
 	}
 	for _, test := range tests {
