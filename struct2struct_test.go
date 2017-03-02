@@ -13,6 +13,16 @@ type Untagged struct {
 	MappedPkgPathString  string
 }
 
+type TwoIntsA struct {
+	First  int
+	Second int `TwoIntsB:"SecondB"`
+}
+
+type TwoIntsB struct {
+	SecondB int
+	First   int
+}
+
 func TestMarshal(t *testing.T) {
 	var tests = []struct {
 		name     string
@@ -156,6 +166,134 @@ func TestMarshal(t *testing.T) {
 			}{
 				MatchString: stringPtr("match"),
 			},
+		},
+		{
+			name: "String to int pointer",
+			in: struct {
+				MatchString string
+			}{
+				MatchString: "match",
+			},
+			other: &struct {
+				MatchString *int
+			}{},
+			err: errors.New("MatchString: types do not match"),
+		},
+		{
+			name: "Struct field, matching",
+			in: struct {
+				SubStruct struct{ num int }
+			}{
+				SubStruct: struct{ num int }{num: 100},
+			},
+			other: &struct {
+				SubStruct struct{ num int }
+			}{},
+			expected: &struct {
+				SubStruct struct{ num int }
+			}{
+				SubStruct: struct{ num int }{num: 100},
+			},
+		},
+		{
+			name: "Struct field, not matching",
+			in: struct {
+				SubStruct TwoIntsA
+			}{
+				SubStruct: TwoIntsA{
+					First:  10,
+					Second: 20,
+				},
+			},
+			other: &struct {
+				SubStruct TwoIntsB
+			}{},
+			expected: &struct {
+				SubStruct TwoIntsB
+			}{
+				SubStruct: TwoIntsB{
+					SecondB: 20,
+					First:   10,
+				},
+			},
+		},
+		{
+			name: "Struct field, pointer to pointer",
+			in: struct {
+				SubStruct *TwoIntsA
+			}{
+				SubStruct: &TwoIntsA{
+					First:  10,
+					Second: 20,
+				},
+			},
+			other: &struct {
+				SubStruct *TwoIntsB
+			}{},
+			expected: &struct {
+				SubStruct *TwoIntsB
+			}{
+				SubStruct: &TwoIntsB{
+					SecondB: 20,
+					First:   10,
+				},
+			},
+		},
+		{
+			name: "Struct field, pointer to non-pointer",
+			in: struct {
+				SubStruct *TwoIntsA
+			}{
+				SubStruct: &TwoIntsA{
+					First:  10,
+					Second: 20,
+				},
+			},
+			other: &struct {
+				SubStruct TwoIntsB
+			}{},
+			expected: &struct {
+				SubStruct TwoIntsB
+			}{
+				SubStruct: TwoIntsB{
+					SecondB: 20,
+					First:   10,
+				},
+			},
+		},
+		{
+			name: "Struct field, non-pointer to pointer",
+			in: struct {
+				SubStruct TwoIntsA
+			}{
+				SubStruct: TwoIntsA{
+					First:  10,
+					Second: 20,
+				},
+			},
+			other: &struct {
+				SubStruct *TwoIntsB
+			}{},
+			expected: &struct {
+				SubStruct *TwoIntsB
+			}{
+				SubStruct: &TwoIntsB{
+					SecondB: 20,
+					First:   10,
+				},
+			},
+		},
+		{
+			name: "Struct fields, error",
+			in: struct {
+				SubStruct struct{ First string }
+			}{
+				SubStruct: struct{ First string }{First: "first"},
+			},
+			other: &struct {
+				SubStruct TwoIntsB
+			}{},
+			err: errors.New("SubStruct: First: types do not match"),
 		},
 	}
 	for _, test := range tests {
