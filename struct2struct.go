@@ -9,16 +9,6 @@ import (
 // Marshal processes i and applies its values to v.
 // Fields are matched first by s2s tags, then by field names.
 func Marshal(i interface{}, v interface{}) error {
-	return doMarshal(i, v, false)
-}
-
-// MarshalStrict processes i and applies its values to v as with Marhsal.
-// If any values in i are not converted, an error will be thrown.
-func MarshalStrict(i interface{}, v interface{}) error {
-	return errors.New("not implemented")
-}
-
-func doMarshal(i interface{}, v interface{}, strict bool) error {
 	if v == nil {
 		return errors.New("nil target")
 	}
@@ -26,76 +16,7 @@ func doMarshal(i interface{}, v interface{}, strict bool) error {
 		return errors.New("expect target to be a pointer")
 	}
 
-	iFields := mapFields(i, v)
-	vFields := mapFields(v, i)
-
-	for name, iField := range iFields {
-		if vField, ok := vFields[name]; ok {
-			err := applyField(iField, vField)
-			if err != nil {
-				return fmt.Errorf("%v: %v", name, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-func applyField(iField reflect.Value, vField reflect.Value) error {
-	if !vField.CanSet() {
-		return nil
-	}
-	if iField.Type() != vField.Type() {
-		applied, err := applyStruct(iField, vField)
-		if applied || err != nil {
-			return err
-		}
-		applied, err = applyPointers(iField, vField)
-		if applied || err != nil {
-			return err
-		}
-		return errors.New("types do not match")
-	}
-
-	vField.Set(iField)
-	return nil
-}
-
-func applyPointers(iField reflect.Value, vField reflect.Value) (bool, error) {
-	if iField.Type().Kind() == reflect.Ptr {
-		err := applyField(reflect.Indirect(iField), vField)
-		return err == nil, err
-	}
-	iPtrType := reflect.PtrTo(iField.Type())
-	if vField.Type().Kind() == reflect.Ptr {
-		if iPtrType == vField.Type() {
-			newPtr := reflect.New(iField.Type())
-			newPtr.Elem().Set(iField)
-			err := applyField(newPtr, vField)
-			return err == nil, err
-		}
-		t := reflect.TypeOf(vField.Interface())
-		if iField.Kind() == reflect.Struct && t.Elem().Kind() == reflect.Struct {
-			newPtr := reflect.New(t.Elem())
-			err := doMarshal(iField.Interface(), newPtr.Interface(), false)
-			if err == nil {
-				vField.Set(newPtr)
-			}
-			return err == nil, err
-		}
-	}
-	return false, nil
-}
-
-func applyStruct(iField reflect.Value, vField reflect.Value) (bool, error) {
-	if !(iField.Type().Kind() == reflect.Struct && vField.Type().Kind() == reflect.Struct) {
-		return false, nil
-	}
-	newPtr := reflect.New(vField.Type())
-	newPtr.Elem().Set(vField)
-	err := doMarshal(iField.Interface(), newPtr.Interface(), false)
-	vField.Set(newPtr.Elem())
-	return err == nil, err
+	return applyField(reflect.ValueOf(i), reflect.ValueOf(v).Elem())
 }
 
 func mapFields(i interface{}, other interface{}) map[string]reflect.Value {

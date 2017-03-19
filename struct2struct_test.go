@@ -97,27 +97,7 @@ func TestMarshal(t *testing.T) {
 				MatchString: 100,
 			},
 			other: &Untagged{},
-			err:   errors.New("MatchString: types do not match"),
-		},
-		{
-			name: "Unsettable field",
-			in: struct {
-				MatchString int
-				unexported  int
-			}{
-				MatchString: 100,
-				unexported:  200,
-			},
-			other: &struct {
-				MatchString int
-				unexported  int
-			}{},
-			expected: &struct {
-				MatchString int
-				unexported  int
-			}{
-				MatchString: 100,
-			},
+			err:   errors.New("MatchString: could not apply types"),
 		},
 		{
 			name: "String pointer to string pointer",
@@ -177,7 +157,7 @@ func TestMarshal(t *testing.T) {
 			other: &struct {
 				MatchString *int
 			}{},
-			err: errors.New("MatchString: types do not match"),
+			err: errors.New("MatchString: could not apply types"),
 		},
 		{
 			name: "Struct field, matching",
@@ -293,7 +273,7 @@ func TestMarshal(t *testing.T) {
 			other: &struct {
 				SubStruct TwoIntsB
 			}{},
-			err: errors.New("SubStruct: First: types do not match"),
+			err: errors.New("SubStruct: First: could not apply types"),
 		},
 	}
 	for _, test := range tests {
@@ -315,13 +295,6 @@ func TestMarshal(t *testing.T) {
 				t.Errorf("values did not match, expected '%v', got '%v'", test.expected, test.other)
 			}
 		})
-	}
-}
-
-func TestMarshalStrict(t *testing.T) {
-	err := MarshalStrict(nil, nil)
-	if err == nil || err.Error() != "not implemented" {
-		t.Errorf("unexpected error: %v", err)
 	}
 }
 
