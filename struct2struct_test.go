@@ -23,7 +23,7 @@ type TwoIntsB struct {
 	First   int
 }
 
-func TestMarshal(t *testing.T) {
+func TestMarshalStructs(t *testing.T) {
 	var tests = []struct {
 		name     string
 		in       interface{}
@@ -274,6 +274,105 @@ func TestMarshal(t *testing.T) {
 				SubStruct TwoIntsB
 			}{},
 			err: errors.New("SubStruct: First: could not apply types"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := Marshal(
+				test.in,
+				test.other,
+			)
+			if test.err == nil && err != nil {
+				t.Error(err)
+			}
+			if test.err != nil && err == nil {
+				t.Error("expected an error")
+			}
+			if test.err != nil && err != nil && test.err.Error() != err.Error() {
+				t.Errorf("errors did not match, expected '%v', got '%v'", test.err, err)
+			}
+			if err == nil && !reflect.DeepEqual(test.expected, test.other) {
+				t.Errorf("values did not match, expected '%v', got '%v'", test.expected, test.other)
+			}
+		})
+	}
+}
+
+func TestMarshalSlices(t *testing.T) {
+	var tests = []struct {
+		name     string
+		in       interface{}
+		other    interface{}
+		expected interface{}
+		err      error
+	}{
+		{
+			name: "Matching slice types",
+			in: []string{
+				"a", "b",
+			},
+			other: &[]string{},
+			expected: &[]string{
+				"a", "b",
+			},
+		},
+		{
+			name: "Non-matching slice types",
+			in: []TwoIntsA{
+				{
+					First:  10,
+					Second: 20,
+				},
+			},
+			other: &[]TwoIntsB{},
+			expected: &[]TwoIntsB{
+				{
+					First:   10,
+					SecondB: 20,
+				},
+			},
+		},
+		{
+			name: "Non-matching slice types in struct",
+			in: struct {
+				Arr []TwoIntsA
+			}{
+				Arr: []TwoIntsA{
+					{
+						First:  10,
+						Second: 20,
+					},
+				},
+			},
+			other: &struct {
+				Arr []TwoIntsB
+			}{},
+			expected: &struct {
+				Arr []TwoIntsB
+			}{
+				Arr: []TwoIntsB{
+					{
+						First:   10,
+						SecondB: 20,
+					},
+				},
+			},
+		},
+		{
+			name: "Slice to non-slice error",
+			in: []string{
+				"a", "b",
+			},
+			other: &struct{}{},
+			err:   errors.New("cannot apply a slice to a non-slice value"),
+		},
+		{
+			name: "Non-slice to slice error",
+			in:   &struct{}{},
+			other: &[]string{
+				"a", "b",
+			},
+			err: errors.New("cannot apply a non-slice value to a slice"),
 		},
 	}
 	for _, test := range tests {

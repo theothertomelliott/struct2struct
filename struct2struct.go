@@ -12,11 +12,10 @@ func Marshal(i interface{}, v interface{}) error {
 	if v == nil {
 		return errors.New("nil target")
 	}
-	if reflect.TypeOf(v).Kind() != reflect.Ptr {
-		return errors.New("expect target to be a pointer")
+	if reflect.TypeOf(v).Kind() == reflect.Ptr {
+		return applyField(reflect.ValueOf(i), reflect.ValueOf(v).Elem())
 	}
-
-	return applyField(reflect.ValueOf(i), reflect.ValueOf(v).Elem())
+	return errors.New("expect target to be a pointer")
 }
 
 func mapFields(i interface{}, other interface{}) map[string]reflect.Value {
