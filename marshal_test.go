@@ -25,14 +25,16 @@ type TwoIntsB struct {
 	First   int
 }
 
+type marshalTest struct {
+	name     string
+	in       interface{}
+	other    interface{}
+	expected interface{}
+	err      error
+}
+
 func TestMarshalStructs(t *testing.T) {
-	var tests = []struct {
-		name     string
-		in       interface{}
-		other    interface{}
-		expected interface{}
-		err      error
-	}{
+	var tests = []marshalTest{
 		{
 			name: "Untagged, other nil",
 			in: struct {
@@ -278,36 +280,11 @@ func TestMarshalStructs(t *testing.T) {
 			err: errors.New("SubStruct: First: could not apply types"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := struct2struct.Marshal(
-				test.in,
-				test.other,
-			)
-			if test.err == nil && err != nil {
-				t.Error(err)
-			}
-			if test.err != nil && err == nil {
-				t.Error("expected an error")
-			}
-			if test.err != nil && err != nil && test.err.Error() != err.Error() {
-				t.Errorf("errors did not match, expected '%v', got '%v'", test.err, err)
-			}
-			if err == nil && !reflect.DeepEqual(test.expected, test.other) {
-				t.Errorf("values did not match, expected '%v', got '%v'", test.expected, test.other)
-			}
-		})
-	}
+	executeTests(t, tests)
 }
 
 func TestMarshalSlices(t *testing.T) {
-	var tests = []struct {
-		name     string
-		in       interface{}
-		other    interface{}
-		expected interface{}
-		err      error
-	}{
+	var tests = []marshalTest{
 		{
 			name: "Matching slice types",
 			in: []string{
@@ -377,6 +354,26 @@ func TestMarshalSlices(t *testing.T) {
 			err: errors.New("cannot apply a non-slice value to a slice"),
 		},
 	}
+	executeTests(t, tests)
+}
+
+func TestMarshalMaps(t *testing.T) {
+	var tests = []marshalTest{
+		{
+			name: "Matching slice types",
+			in: []string{
+				"a", "b",
+			},
+			other: &[]string{},
+			expected: &[]string{
+				"a", "b",
+			},
+		},
+	}
+	executeTests(t, tests)
+}
+
+func executeTests(t *testing.T, tests []marshalTest) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := struct2struct.Marshal(
