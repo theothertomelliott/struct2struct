@@ -277,7 +277,7 @@ func TestMarshalStructs(t *testing.T) {
 			other: &struct {
 				SubStruct TwoIntsB
 			}{},
-			err: errors.New("SubStruct: First: could not apply type 'string' to 'int'"),
+			err: errors.New("SubStruct: First: strconv.Atoi: parsing \"first\": invalid syntax"),
 		},
 	}
 	executeTests(t, tests)
@@ -351,7 +351,7 @@ func TestMarshalSlices(t *testing.T) {
 				"a", "b",
 			},
 			other: &[]int{},
-			err:   errors.New("could not apply type 'string' to 'int'"),
+			err:   errors.New("strconv.Atoi: parsing \"a\": invalid syntax"),
 		},
 		{
 			name: "Non-slice to slice error",
@@ -394,7 +394,7 @@ func TestMarshalMaps(t *testing.T) {
 				"abc": "val-a",
 			},
 			other: &map[int]interface{}{},
-			err:   errors.New("could not apply type 'string' to 'int'"),
+			err:   errors.New("strconv.Atoi: parsing \"abc\": invalid syntax"),
 		},
 		{
 			name: "Invalid value mapping",
@@ -402,7 +402,7 @@ func TestMarshalMaps(t *testing.T) {
 				"key-a": "abc",
 			},
 			other: &map[string]int{},
-			err:   errors.New("could not apply type 'string' to 'int'"),
+			err:   errors.New("strconv.Atoi: parsing \"abc\": invalid syntax"),
 		},
 		{
 			name: "string->string to string->interface{}",
@@ -415,6 +415,240 @@ func TestMarshalMaps(t *testing.T) {
 				"key-a": "val-a",
 				"key-b": "val-b",
 			},
+		},
+	}
+	executeTests(t, tests)
+}
+
+func TestMarshalToInt(t *testing.T) {
+	var tests = []marshalTest{
+		{
+			name:     "string to int",
+			in:       []string{"1"},
+			other:    &[]int{},
+			expected: &[]int{1},
+		},
+		{
+			name:     "string to int8",
+			in:       []string{"2"},
+			other:    &[]int8{},
+			expected: &[]int8{2},
+		},
+		{
+			name:     "string to int16",
+			in:       []string{"3"},
+			other:    &[]int16{},
+			expected: &[]int16{3},
+		},
+		{
+			name:     "string to int32",
+			in:       []string{"4"},
+			other:    &[]int32{},
+			expected: &[]int32{4},
+		},
+		{
+			name:     "string to int64",
+			in:       []string{"5"},
+			other:    &[]int64{},
+			expected: &[]int64{5},
+		},
+		{
+			name:     "uint to int",
+			in:       []uint{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "uint8 to int",
+			in:       []uint8{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "uint16 to int",
+			in:       []uint16{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "uint32 to int",
+			in:       []uint32{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "uint64 to int",
+			in:       []uint64{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "float32 to int",
+			in:       []float32{1, 2.2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "float64 to int",
+			in:       []float64{1, 2.2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:  "Bool to int",
+			in:    []bool{true, false},
+			other: &[]int{},
+			err:   errors.New("could not apply type 'bool' to 'int'"),
+		},
+	}
+	executeTests(t, tests)
+}
+
+func TestMarshalToUint(t *testing.T) {
+	var tests = []marshalTest{
+		{
+			name:     "string to uint",
+			in:       []string{"1"},
+			other:    &[]uint{},
+			expected: &[]uint{1},
+		},
+		{
+			name:     "string to uint8",
+			in:       []string{"2"},
+			other:    &[]uint8{},
+			expected: &[]uint8{2},
+		},
+		{
+			name:     "string to uint16",
+			in:       []string{"3"},
+			other:    &[]uint16{},
+			expected: &[]uint16{3},
+		},
+		{
+			name:     "string to uint32",
+			in:       []string{"4"},
+			other:    &[]uint32{},
+			expected: &[]uint32{4},
+		},
+		{
+			name:     "string to uint64",
+			in:       []string{"5"},
+			other:    &[]uint64{},
+			expected: &[]uint64{5},
+		},
+		{
+			name:     "uint32 to uint",
+			in:       []uint32{1, 2},
+			other:    &[]uint{},
+			expected: &[]uint{1, 2},
+		},
+		{
+			name:     "int8 to uint",
+			in:       []int8{1, 2},
+			other:    &[]uint{},
+			expected: &[]uint{1, 2},
+		},
+		{
+			name:     "int16 to uint",
+			in:       []int16{1, 2},
+			other:    &[]uint{},
+			expected: &[]uint{1, 2},
+		},
+		{
+			name:     "uint64 to int",
+			in:       []uint64{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "float32 to uint",
+			in:       []float32{1, 2.2},
+			other:    &[]uint{},
+			expected: &[]uint{1, 2},
+		},
+		{
+			name:     "float64 to uint",
+			in:       []float64{1, 2.2},
+			other:    &[]uint{},
+			expected: &[]uint{1, 2},
+		},
+		{
+			name:  "Bool to uint",
+			in:    []bool{true, false},
+			other: &[]uint{},
+			err:   errors.New("could not apply type 'bool' to 'uint'"),
+		},
+		{
+			name:  "Invalid string to uint",
+			in:    []string{"abc"},
+			other: &[]uint{},
+			err:   errors.New("strconv.Atoi: parsing \"abc\": invalid syntax"),
+		},
+	}
+	executeTests(t, tests)
+}
+
+func TestMarshalToFloat(t *testing.T) {
+	var tests = []marshalTest{
+		{
+			name:     "string to float32",
+			in:       []string{"1.11"},
+			other:    &[]float32{},
+			expected: &[]float32{1.11},
+		},
+		{
+			name:     "string to float32",
+			in:       []string{"2.22"},
+			other:    &[]float64{},
+			expected: &[]float64{2.22},
+		},
+		{
+			name:     "uint32 to float32",
+			in:       []uint32{1, 2},
+			other:    &[]float32{},
+			expected: &[]float32{1, 2},
+		},
+		{
+			name:     "int8 to float64",
+			in:       []int8{1, 2},
+			other:    &[]float64{},
+			expected: &[]float64{1, 2},
+		},
+		{
+			name:     "int16 to float32",
+			in:       []int16{1, 2},
+			other:    &[]float32{},
+			expected: &[]float32{1, 2},
+		},
+		{
+			name:     "uint64 to int",
+			in:       []uint64{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
+			name:     "float32 to float64",
+			in:       []float32{1, 2.2},
+			other:    &[]float64{},
+			expected: &[]float64{1, 2.2},
+		},
+		{
+			name:     "float64 to float32",
+			in:       []float64{1, 2.2},
+			other:    &[]float32{},
+			expected: &[]float32{1, 2.2},
+		},
+		{
+			name:  "Bool to float32",
+			in:    []bool{true, false},
+			other: &[]float32{},
+			err:   errors.New("could not apply type 'bool' to 'float32'"),
+		},
+		{
+			name:  "Invalid string to float32",
+			in:    []string{"abc"},
+			other: &[]float32{},
+			err:   errors.New("strconv.ParseFloat: parsing \"abc\": invalid syntax"),
 		},
 	}
 	executeTests(t, tests)

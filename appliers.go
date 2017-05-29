@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 var appliers []applier
@@ -11,6 +12,9 @@ var appliers []applier
 func init() {
 	appliers = []applier{
 		interfaceApplier,
+		intApplier,
+		uintApplier,
+		floatApplier,
 		sliceApplier,
 		settableTestApplier,
 		matchedTypeApplier,
@@ -30,6 +34,102 @@ func applyField(iField reflect.Value, vField reflect.Value) error {
 		}
 	}
 	return errors.New(fmt.Sprintf("could not apply type '%v' to '%v'", iField.Type(), vField.Type()))
+}
+
+func intApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	switch vField.Type().Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	default:
+		return false, nil
+	}
+
+	var value int64
+
+	switch iField.Type().Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		value = iField.Int()
+	case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
+		value = int64(iField.Uint())
+	case reflect.Float32, reflect.Float64:
+		value = int64(iField.Float())
+	case reflect.String:
+		valInt, err := strconv.Atoi(iField.String())
+		if err != nil {
+			return false, err
+		}
+		value = int64(valInt)
+	default:
+		return false, nil
+	}
+
+	vField.SetInt(value)
+	return true, nil
+}
+
+func uintApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	switch vField.Type().Kind() {
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+	default:
+		return false, nil
+	}
+
+	var value uint64
+
+	switch iField.Type().Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		value = uint64(iField.Int())
+	case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
+		value = iField.Uint()
+	case reflect.Float32, reflect.Float64:
+		value = uint64(iField.Float())
+	case reflect.String:
+		valInt, err := strconv.Atoi(iField.String())
+		if err != nil {
+			return false, err
+		}
+		value = uint64(valInt)
+	default:
+		return false, nil
+	}
+
+	vField.SetUint(value)
+	return true, nil
+}
+
+func floatApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+
+	var bitSize = 32
+	switch vField.Type().Kind() {
+	case reflect.Float32:
+	case reflect.Float64:
+		bitSize = 64
+	default:
+		return false, nil
+	}
+
+	var value float64
+	var err error
+
+	switch iField.Type().Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		value = float64(iField.Int())
+	case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
+		value = float64(iField.Uint())
+	case reflect.Float32:
+		value, _ = strconv.ParseFloat(fmt.Sprint(float32(iField.Float())), bitSize)
+	case reflect.Float64:
+		value = iField.Float()
+	case reflect.String:
+		value, err = strconv.ParseFloat(iField.String(), bitSize)
+		if err != nil {
+			return false, err
+		}
+	default:
+		return false, nil
+	}
+
+	vField.SetFloat(value)
+	return true, nil
 }
 
 func interfaceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
