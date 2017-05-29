@@ -101,7 +101,7 @@ func TestMarshalStructs(t *testing.T) {
 				MatchString: 100,
 			},
 			other: &Untagged{},
-			err:   errors.New("MatchString: could not apply types"),
+			err:   errors.New("MatchString: could not apply type 'int' to 'string'"),
 		},
 		{
 			name: "String pointer to string pointer",
@@ -161,7 +161,7 @@ func TestMarshalStructs(t *testing.T) {
 			other: &struct {
 				MatchString *int
 			}{},
-			err: errors.New("MatchString: could not apply types"),
+			err: errors.New("MatchString: could not apply type 'string' to '*int'"),
 		},
 		{
 			name: "Struct field, matching",
@@ -277,7 +277,7 @@ func TestMarshalStructs(t *testing.T) {
 			other: &struct {
 				SubStruct TwoIntsB
 			}{},
-			err: errors.New("SubStruct: First: could not apply types"),
+			err: errors.New("SubStruct: First: could not apply type 'string' to 'int'"),
 		},
 	}
 	executeTests(t, tests)
@@ -346,6 +346,14 @@ func TestMarshalSlices(t *testing.T) {
 			err:   errors.New("cannot apply a slice to a non-slice value"),
 		},
 		{
+			name: "Invalid value mapping",
+			in: []string{
+				"a", "b",
+			},
+			other: &[]int{},
+			err:   errors.New("could not apply type 'string' to 'int'"),
+		},
+		{
 			name: "Non-slice to slice error",
 			in:   &struct{}{},
 			other: &[]string{
@@ -360,13 +368,52 @@ func TestMarshalSlices(t *testing.T) {
 func TestMarshalMaps(t *testing.T) {
 	var tests = []marshalTest{
 		{
-			name: "Matching slice types",
-			in: []string{
-				"a", "b",
+			name: "Matching map types",
+			in: map[string]string{
+				"key-a": "val-a",
+				"key-b": "val-b",
 			},
-			other: &[]string{},
-			expected: &[]string{
-				"a", "b",
+			other: &map[string]string{},
+			expected: &map[string]string{
+				"key-a": "val-a",
+				"key-b": "val-b",
+			},
+		},
+		{
+			name: "Map to non-map",
+			in: map[string]string{
+				"key-a": "val-a",
+				"key-b": "val-b",
+			},
+			other: stringPtr("not a map"),
+			err:   errors.New("cannot apply a map type to a non-map"),
+		},
+		{
+			name: "Invalid key mapping",
+			in: map[string]string{
+				"abc": "val-a",
+			},
+			other: &map[int]interface{}{},
+			err:   errors.New("could not apply type 'string' to 'int'"),
+		},
+		{
+			name: "Invalid value mapping",
+			in: map[string]string{
+				"key-a": "abc",
+			},
+			other: &map[string]int{},
+			err:   errors.New("could not apply type 'string' to 'int'"),
+		},
+		{
+			name: "string->string to string->interface{}",
+			in: map[string]string{
+				"key-a": "val-a",
+				"key-b": "val-b",
+			},
+			other: &map[string]interface{}{},
+			expected: &map[string]interface{}{
+				"key-a": "val-a",
+				"key-b": "val-b",
 			},
 		},
 	}

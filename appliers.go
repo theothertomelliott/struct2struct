@@ -10,11 +10,13 @@ var appliers []applier
 
 func init() {
 	appliers = []applier{
+		interfaceApplier,
 		sliceApplier,
 		settableTestApplier,
 		matchedTypeApplier,
 		structApplier,
 		pointerApplier,
+		mapApplier,
 	}
 }
 
@@ -27,7 +29,16 @@ func applyField(iField reflect.Value, vField reflect.Value) error {
 			return err
 		}
 	}
-	return errors.New("could not apply types")
+	return errors.New(fmt.Sprintf("could not apply type '%v' to '%v'", iField.Type(), vField.Type()))
+}
+
+func interfaceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if vField.Type().Kind() != reflect.Interface {
+		return false, nil
+	}
+
+	vField.Set(iField)
+	return true, nil
 }
 
 func sliceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
@@ -127,4 +138,36 @@ func pointerApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func mapApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if iField.Type().Kind() != reflect.Map && vField.Type().Kind() != reflect.Map {
+		return false, nil
+	}
+	if iField.Type().Kind() != reflect.Map || vField.Type().Kind() != reflect.Map {
+		return false, errors.New("cannot apply a map type to a non-map")
+	}
+
+	vKeyType := vField.Type().Key()
+	vElemType := vField.Type().Elem()
+
+	newMap := reflect.MakeMap(vField.Type())
+
+	for _, key := range iField.MapKeys() {
+		newKey := reflect.New(vKeyType)
+		newElem := reflect.New(vElemType)
+		err := applyField(key, newKey.Elem())
+		if err != nil {
+			return false, err
+		}
+		err = applyField(iField.MapIndex(key), newElem.Elem())
+		if err != nil {
+			return false, err
+		}
+
+		newMap.SetMapIndex(newKey.Elem(), newElem.Elem())
+	}
+	vField.Set(newMap)
+
+	return true, nil
 }
