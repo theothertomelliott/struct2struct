@@ -12,12 +12,12 @@ var appliers []applier
 func init() {
 	appliers = []applier{
 		interfaceApplier,
+		settableTestApplier,
+		matchedTypeApplier,
 		intApplier,
 		uintApplier,
 		floatApplier,
 		sliceApplier,
-		settableTestApplier,
-		matchedTypeApplier,
 		structApplier,
 		pointerApplier,
 		mapApplier,

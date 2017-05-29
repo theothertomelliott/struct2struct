@@ -283,6 +283,34 @@ func TestMarshalStructs(t *testing.T) {
 	executeTests(t, tests)
 }
 
+func TestMarshalUnsettable(t *testing.T) {
+	var tests = []marshalTest{
+		{
+			name: "Unsettable struct fields",
+			in: struct {
+				Settable   string
+				unsettable string
+			}{
+				Settable:   "abc",
+				unsettable: "def",
+			},
+			other: &struct {
+				Settable   string
+				unsettable string
+				Extra      string
+			}{},
+			expected: &struct {
+				Settable   string
+				unsettable string
+				Extra      string
+			}{
+				Settable: "abc",
+			},
+		},
+	}
+	executeTests(t, tests)
+}
+
 func TestMarshalSlices(t *testing.T) {
 	var tests = []marshalTest{
 		{
@@ -483,6 +511,12 @@ func TestMarshalToInt(t *testing.T) {
 			expected: &[]int{1, 2},
 		},
 		{
+			name:     "int32 to int",
+			in:       []int32{1, 2},
+			other:    &[]int{},
+			expected: &[]int{1, 2},
+		},
+		{
 			name:     "float32 to int",
 			in:       []float32{1, 2.2},
 			other:    &[]int{},
@@ -571,6 +605,12 @@ func TestMarshalToUint(t *testing.T) {
 			in:       []float64{1, 2.2},
 			other:    &[]uint{},
 			expected: &[]uint{1, 2},
+		},
+		{
+			name:     "uint64 to uint32",
+			in:       []uint64{1, 2},
+			other:    &[]uint32{},
+			expected: &[]uint32{1, 2},
 		},
 		{
 			name:  "Bool to uint",
