@@ -153,10 +153,6 @@ func sliceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 
 	if iField.Type().Kind() == reflect.Slice &&
 		vField.Type().Kind() == reflect.Slice {
-		if iField.Type() == vField.Type() {
-			vField.Set(reflect.AppendSlice(vField, iField))
-			return true, nil
-		}
 		for i := 0; i < iField.Len(); i++ {
 			iValue := iField.Index(i)
 			appendVal := reflect.New(vField.Type().Elem())
