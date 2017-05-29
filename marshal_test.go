@@ -94,16 +94,6 @@ func TestMarshalStructs(t *testing.T) {
 			err:   errors.New("expect target to be a pointer"),
 		},
 		{
-			name: "Non-matching types",
-			in: struct {
-				MatchString int
-			}{
-				MatchString: 100,
-			},
-			other: &Untagged{},
-			err:   errors.New("MatchString: could not apply type 'int' to 'string'"),
-		},
-		{
 			name: "String pointer to string pointer",
 			in: struct {
 				MatchString *string
@@ -371,7 +361,7 @@ func TestMarshalSlices(t *testing.T) {
 				"a", "b",
 			},
 			other: &struct{}{},
-			err:   errors.New("cannot apply a slice to a non-slice value"),
+			err:   errors.New("cannot apply a non-slice value to a slice"),
 		},
 		{
 			name: "Invalid value mapping",
@@ -689,6 +679,64 @@ func TestMarshalToFloat(t *testing.T) {
 			in:    []string{"abc"},
 			other: &[]float32{},
 			err:   errors.New("strconv.ParseFloat: parsing \"abc\": invalid syntax"),
+		},
+	}
+	executeTests(t, tests)
+}
+
+func TestMarshalToString(t *testing.T) {
+	var tests = []marshalTest{
+		{
+			name: "Int to string",
+			in: struct {
+				MatchString int
+			}{
+				MatchString: 100,
+			},
+			other: &Untagged{},
+			expected: &Untagged{
+				MatchString: "100",
+			},
+		},
+		{
+			name:     "bool to string",
+			in:       []bool{true},
+			other:    &[]string{},
+			expected: &[]string{"true"},
+		},
+		{
+			name:     "float64 to string",
+			in:       []float64{2.2},
+			other:    &[]string{},
+			expected: &[]string{"2.2"},
+		},
+		{
+			name: "struct to string",
+			in: []struct {
+				Field string
+			}{
+				{
+					Field: "abc",
+				},
+			},
+			other: &[]string{},
+			err:   errors.New("cannot apply a struct type to a non-struct"),
+		},
+		{
+			name: "slice to string",
+			in: [][]string{
+				[]string{},
+			},
+			other: &[]string{},
+			err:   errors.New("cannot apply a non-slice value to a slice"),
+		},
+		{
+			name: "map to string",
+			in: []map[string]string{
+				make(map[string]string),
+			},
+			other: &[]string{},
+			err:   errors.New("cannot apply a map type to a non-map"),
 		},
 	}
 	executeTests(t, tests)

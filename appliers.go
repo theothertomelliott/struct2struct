@@ -14,13 +14,14 @@ func init() {
 		interfaceApplier,
 		settableTestApplier,
 		matchedTypeApplier,
+		pointerApplier,
+		sliceApplier,
+		mapApplier,
+		structApplier,
 		intApplier,
 		uintApplier,
 		floatApplier,
-		sliceApplier,
-		structApplier,
-		pointerApplier,
-		mapApplier,
+		stringApplier,
 	}
 }
 
@@ -33,7 +34,7 @@ func applyField(iField reflect.Value, vField reflect.Value) error {
 			return err
 		}
 	}
-	return errors.New(fmt.Sprintf("could not apply type '%v' to '%v'", iField.Type(), vField.Type()))
+	return fmt.Errorf("could not apply type '%v' to '%v'", iField.Type(), vField.Type())
 }
 
 func intApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
@@ -97,7 +98,6 @@ func uintApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 }
 
 func floatApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
-
 	var bitSize = 32
 	switch vField.Type().Kind() {
 	case reflect.Float32:
@@ -132,6 +132,15 @@ func floatApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 	return true, nil
 }
 
+func stringApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if vField.Type().Kind() != reflect.String {
+		return false, nil
+	}
+
+	vField.SetString(fmt.Sprint(iField.Interface()))
+	return true, nil
+}
+
 func interfaceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 	if vField.Type().Kind() != reflect.Interface {
 		return false, nil
@@ -142,30 +151,23 @@ func interfaceApplier(iField reflect.Value, vField reflect.Value) (bool, error) 
 }
 
 func sliceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
-	if iField.Type().Kind() == reflect.Slice &&
-		vField.Type().Kind() != reflect.Slice {
-		return false, errors.New("cannot apply a slice to a non-slice value")
+	if iField.Type().Kind() != reflect.Slice && vField.Type().Kind() != reflect.Slice {
+		return false, nil
 	}
-	if iField.Type().Kind() != reflect.Slice &&
-		vField.Type().Kind() == reflect.Slice {
+	if iField.Type().Kind() != reflect.Slice || vField.Type().Kind() != reflect.Slice {
 		return false, errors.New("cannot apply a non-slice value to a slice")
 	}
 
-	if iField.Type().Kind() == reflect.Slice &&
-		vField.Type().Kind() == reflect.Slice {
-		for i := 0; i < iField.Len(); i++ {
-			iValue := iField.Index(i)
-			appendVal := reflect.New(vField.Type().Elem())
-			err := applyField(iValue, appendVal.Elem())
-			if err != nil {
-				return false, err
-			}
-			vField.Set(reflect.Append(vField, appendVal.Elem()))
+	for i := 0; i < iField.Len(); i++ {
+		iValue := iField.Index(i)
+		appendVal := reflect.New(vField.Type().Elem())
+		err := applyField(iValue, appendVal.Elem())
+		if err != nil {
+			return false, err
 		}
-		return true, nil
+		vField.Set(reflect.Append(vField, appendVal.Elem()))
 	}
-
-	return false, nil
+	return true, nil
 }
 
 // settableTestApplier drops handling for any unsettable fields
@@ -185,8 +187,11 @@ func matchedTypeApplier(iField reflect.Value, vField reflect.Value) (bool, error
 }
 
 func structApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
-	if !(iField.Type().Kind() == reflect.Struct && vField.Type().Kind() == reflect.Struct) {
+	if iField.Type().Kind() != reflect.Struct && vField.Type().Kind() != reflect.Struct {
 		return false, nil
+	}
+	if iField.Type().Kind() != reflect.Struct || vField.Type().Kind() != reflect.Struct {
+		return false, errors.New("cannot apply a struct type to a non-struct")
 	}
 	newPtr := reflect.New(vField.Type())
 	newPtr.Elem().Set(vField)
