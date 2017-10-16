@@ -26,11 +26,12 @@ type TwoIntsB struct {
 }
 
 type marshalTest struct {
-	name     string
-	in       interface{}
-	other    interface{}
-	expected interface{}
-	err      error
+	name       string
+	in         interface{}
+	other      interface{}
+	expected   interface{}
+	comparator func(e interface{}, g interface{}) (bool, string)
+	err        error
 }
 
 func TestMarshalStructs(t *testing.T) {
@@ -378,6 +379,43 @@ func TestMarshalSlices(t *testing.T) {
 				"a", "b",
 			},
 			err: errors.New("cannot apply a non-slice value to a slice"),
+		},
+	}
+	executeTests(t, tests)
+}
+
+func TestMarshalFunc(t *testing.T) {
+	var f1 = func() int {
+		return 1
+	}
+	var f2 = func() int {
+		return 0
+	}
+	var f3 = func() string {
+		return "hello"
+	}
+
+	var tests = []marshalTest{
+		{
+			name:     "Matching func types",
+			in:       f1,
+			other:    &f2,
+			expected: f1,
+			comparator: func(e interface{}, g interface{}) (bool, string) {
+				fe := e.(func() int)
+				pfg := g.(*func() int)
+				fg := *pfg
+				if fe() != fg() {
+					return false, "didn't match"
+				}
+				return true, ""
+			},
+		},
+		{
+			name:  "Non-matching func types",
+			in:    f1,
+			other: &f3,
+			err:   errors.New("could not apply type 'func() int' to 'func() string'"),
 		},
 	}
 	executeTests(t, tests)
@@ -758,7 +796,16 @@ func executeTests(t *testing.T, tests []marshalTest) {
 			if test.err != nil && err != nil && test.err.Error() != err.Error() {
 				t.Errorf("errors did not match, expected '%v', got '%v'", test.err, err)
 			}
-			if err == nil && !reflect.DeepEqual(test.expected, test.other) {
+			if err != nil {
+				return
+			}
+			if test.comparator != nil {
+				if ok, message := test.comparator(test.expected, test.other); !ok {
+					t.Errorf("comparison failed: %v", message)
+				}
+				return
+			}
+			if !reflect.DeepEqual(test.expected, test.other) {
 				t.Errorf("values did not match, expected '%v', got '%v'", test.expected, test.other)
 			}
 		})
