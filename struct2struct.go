@@ -56,9 +56,12 @@ func mapFields(i interface{}, other interface{}) map[string]reflect.Value {
 	return outFields
 }
 
-// Custom allows a struct to provide custom marshalling to another struct type.
-// Custom marshaling will be performed after automatic marshaling.
-type Custom interface {
+// Marshaler allows a struct to provide custom marshalling to other types.
+type Marshaler interface {
 	MarshalStruct(v interface{}) error
+}
+
+// Unmarshaler allows a struct to provude custom unmarshalling from other types.
+type Unmarshaler interface {
 	UnmarshalStruct(v interface{}) error
 }

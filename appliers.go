@@ -34,10 +34,17 @@ func applyField(iField reflect.Value, vField reflect.Value) error {
 			return err
 		}
 	}
+	if !iField.IsValid() || !vField.IsValid() {
+		return fmt.Errorf("could not apply types")
+	}
 	return fmt.Errorf("could not apply type '%v' to '%v'", iField.Type(), vField.Type())
 }
 
 func intApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
+
 	switch vField.Type().Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 	default:
@@ -68,6 +75,10 @@ func intApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 }
 
 func uintApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
+
 	switch vField.Type().Kind() {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 	default:
@@ -98,6 +109,10 @@ func uintApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 }
 
 func floatApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
+
 	var bitSize = 32
 	switch vField.Type().Kind() {
 	case reflect.Float32:
@@ -133,6 +148,9 @@ func floatApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 }
 
 func stringApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
 	if vField.Type().Kind() != reflect.String {
 		return false, nil
 	}
@@ -142,6 +160,9 @@ func stringApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 }
 
 func interfaceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
 	if vField.Type().Kind() != reflect.Interface {
 		return false, nil
 	}
@@ -151,6 +172,9 @@ func interfaceApplier(iField reflect.Value, vField reflect.Value) (bool, error) 
 }
 
 func sliceApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
 	if iField.Type().Kind() != reflect.Slice && vField.Type().Kind() != reflect.Slice {
 		return false, nil
 	}
@@ -179,6 +203,9 @@ func settableTestApplier(iField reflect.Value, vField reflect.Value) (bool, erro
 }
 
 func matchedTypeApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
 	if iField.Type() == vField.Type() {
 		vField.Set(iField)
 		return true, nil
@@ -187,6 +214,9 @@ func matchedTypeApplier(iField reflect.Value, vField reflect.Value) (bool, error
 }
 
 func structApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
 	if iField.Type().Kind() != reflect.Struct && vField.Type().Kind() != reflect.Struct {
 		return false, nil
 	}
@@ -216,6 +246,9 @@ func marshalStruct(i interface{}, v interface{}) error {
 }
 
 func pointerApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
 	if iField.Type().Kind() == reflect.Ptr {
 		err := applyField(reflect.Indirect(iField), vField)
 		return err == nil, err
@@ -242,6 +275,9 @@ func pointerApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
 }
 
 func mapApplier(iField reflect.Value, vField reflect.Value) (bool, error) {
+	if !iField.IsValid() || !vField.IsValid() {
+		return false, nil
+	}
 	if iField.Type().Kind() != reflect.Map && vField.Type().Kind() != reflect.Map {
 		return false, nil
 	}
